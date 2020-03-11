@@ -19,6 +19,7 @@ keywords = {}
 keywords['COLOR'] = ['red', 'green', 'blue']
 
 stopgomap = {'stop': 'stop', 'go': 'go', 'pause': 'stop', 'resume': 'go', 'continue': 'go'}
+bigsmallmap = {'big': 'big', 'bigger': 'big', 'large':'big', 'larger':'big', 'small': 'small', 'smaller':'small', 'increase':'big', 'decrease':'small'}
 
 
 q_color = Queue()
@@ -34,6 +35,18 @@ def changecolor(color):
         q_color.put((0, 0, 255))
     else:
         print('*Error in changing color*')
+
+def bigsmall(size, num):
+    if size == 'big' and num:
+        q_size.put(ball_r + int(num))
+    elif size == 'big' and not num:
+        q_size.put(ball_r + 15)
+    elif size == 'small' and num:
+        q_size.put(ball_r - int(num))
+    elif size == 'small' and not num:
+        q_size.put(ball_r - 15)
+    elif not size and num:
+        q_size.put(int(num))
 
 def stopgo(command):
     if command == 'stop':
@@ -51,13 +64,24 @@ def decipher(text):
     for item in words:
         lemm.append(Word(item).lemmatize().lower())
 
-    col = False
-
+    col = True
+    spec = False
     for item in lemm:
         if item in keywords['COLOR']:
             changecolor(item)
         elif item in stopgomap.keys():
             stopgo(stopgomap[item])
+        elif item in bigsmallmap.keys():
+            for num in lemm:
+                if num.isnumeric():
+                    bigsmall(bigsmallmap[item], num)
+                    spec = True
+                    col = False
+            if not spec:
+                bigsmall(bigsmallmap[item], None)
+        elif item.isnumeric() and col:
+            bigsmall(None,item)
+
 
 
 def listen():
