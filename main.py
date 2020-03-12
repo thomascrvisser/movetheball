@@ -20,11 +20,15 @@ keywords['COLOR'] = ['red', 'green', 'blue']
 
 stopgomap = {'stop': 'stop', 'go': 'go', 'pause': 'stop', 'resume': 'go', 'continue': 'go'}
 bigsmallmap = {'big': 'big', 'bigger': 'big', 'large':'big', 'larger':'big', 'small': 'small', 'smaller':'small', 'increase':'big', 'decrease':'small'}
-
+speedmap = {'increase':'fast', 'decrease':'slow', 'faster':'fast', 'slower':'slow', 'slow':'slow', 'speed':'fast'}
+speedwords = ['speed', 'slow', 'down', 'up', 'faster', 'slower', 'fast', 'slow']
 
 q_color = Queue()
 q_size = Queue()
 q_go = Queue()
+q_speed = Queue()
+
+
 
 def changecolor(color):
     if color == 'green':
@@ -56,6 +60,19 @@ def stopgo(command):
     else:
         print('*Error in Stop/Go*')
 
+def changespeed(speed, num):
+    global x_vel, y_vel
+    if speed == 'fast' and num:
+        q_speed.put([x_vel - int(num), y_vel - int(num)])
+    elif speed == 'fast' and not num:
+        q_speed.put([x_vel - 15, y_vel - 15])
+    elif speed == 'slow' and num:
+        q_speed.put([x_vel + int(num), y_vel + int(num)])
+    elif speed == 'slow' and not num:
+        q_speed.put([x_vel + 15, y_vel + 15])
+    elif not speed and num:
+        q_speed.put([int(num), int(num)])
+
 def decipher(text):
     tb = TextBlob(text)
     words = tb.words
@@ -66,6 +83,9 @@ def decipher(text):
 
     col = True
     spec = False
+    speed = False
+    done = False
+    noinc = False
     for item in lemm:
         if item in keywords['COLOR']:
             changecolor(item)
@@ -78,9 +98,23 @@ def decipher(text):
                     spec = True
                     col = False
             if not spec:
-                bigsmall(bigsmallmap[item], None)
+                for x in lemm:
+                    if x in speedwords:
+                        noinc = True
+                if not noinc:
+                    bigsmall(bigsmallmap[item], None)
+        elif item in speedwords and not done:
+            for num in lemm:
+                if num.isnumeric():
+                    changespeed(speedmap[item], num)
+                    speed = True
+            if not speed:
+                changespeed(speedmap[item], None)
+                done = True
+
         elif item.isnumeric() and col:
             bigsmall(None,item)
+
 
 
 
@@ -114,7 +148,6 @@ def listen():
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-MAX_VEL = 10
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -123,9 +156,10 @@ clock = pygame.time.Clock()
 ball_x = random.randint(0, SCREEN_WIDTH)
 ball_y = random.randint(0, SCREEN_HEIGHT)
 ball_r = 50
-
+MAX_VEL = 10
 x_vel = -MAX_VEL
 y_vel = -MAX_VEL
+
 delta_r = 0
 ball_color = (255, 0, 0)
 
@@ -153,17 +187,28 @@ while not done:
         y_vel = MAX_VEL if stop_go == 'GO' else 0
     except:
         pass
+    try:
+        updated_speed = q_speed.get(block=False, timeout=0.1)
+        x_vel = updated_speed[0]
+        y_vel = updated_speed[1]
+    except:
+        pass
 
     # Move the ball
     ball_x += x_vel
     ball_y += y_vel
     ball_r += delta_r
 
+#TODO: fix the speed - what the heck is going on with the velocity? also set speed
+#TODO: breaks on decrease speed
+
+#TODO: add easter egg
+#TODO: recheck all commands
     # If the ball hit the wall, reverse direction
-    if ball_x + ball_r > SCREEN_WIDTH: x_vel = -MAX_VEL
-    if ball_x - ball_r < 0: x_vel = MAX_VEL
-    if ball_y + ball_r > SCREEN_HEIGHT: y_vel = -MAX_VEL
-    if ball_y - ball_r < 0: y_vel = MAX_VEL
+    if ball_x + ball_r > SCREEN_WIDTH: x_vel = -x_vel
+    if ball_x - ball_r < 0: x_vel = -x_vel
+    if ball_y + ball_r > SCREEN_HEIGHT: y_vel = -y_vel
+    if ball_y - ball_r < 0: y_vel = -y_vel
 
     # Update the screen
     # screen.fill((0,0,0))    # clear all previously drawn images
