@@ -20,8 +20,9 @@ keywords['COLOR'] = ['red', 'green', 'blue']
 
 stopgomap = {'stop': 'stop', 'go': 'go', 'pause': 'stop', 'resume': 'go', 'continue': 'go'}
 bigsmallmap = {'big': 'big', 'bigger': 'big', 'large':'big', 'larger':'big', 'small': 'small', 'smaller':'small', 'increase':'big', 'decrease':'small'}
-speedmap = {'increase':'fast', 'decrease':'slow', 'faster':'fast', 'slower':'slow', 'slow':'slow', 'speed':'fast'}
+speedmap = {'increase':'fast', 'decrease':'slow', 'faster':'fast', 'slower':'slow', 'slow':'slow', 'speed':'fast', 'fast':'fast'}
 speedwords = ['speed', 'slow', 'down', 'up', 'faster', 'slower', 'fast', 'slow']
+easteregg = ['good boy', 'i love you', 'nice job']
 
 q_color = Queue()
 q_size = Queue()
@@ -74,6 +75,16 @@ def changespeed(speed, num):
         q_speed.put([int(num), int(num)])
 
 def decipher(text):
+
+    if text.lower() in easteregg:
+        i = 0
+        prev_color = ball_color
+        while i < 100:
+            q_color.put((random.randrange(0,255),random.randrange(0,255),random.randrange(0,255)))
+            i += 1
+        q_color.put(prev_color)
+
+
     tb = TextBlob(text)
     words = tb.words
 
@@ -112,7 +123,7 @@ def decipher(text):
                 changespeed(speedmap[item], None)
                 done = True
 
-        elif item.isnumeric() and col:
+        elif item.isnumeric() and col and not done and not speed:
             bigsmall(None,item)
 
 
@@ -153,8 +164,11 @@ pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 
-ball_x = random.randint(0, SCREEN_WIDTH)
-ball_y = random.randint(0, SCREEN_HEIGHT)
+# ball_x = random.randint(0, SCREEN_WIDTH)
+# ball_y = random.randint(0, SCREEN_HEIGHT)
+ball_x = 400
+ball_y = 300
+
 ball_r = 50
 MAX_VEL = 10
 x_vel = -MAX_VEL
@@ -199,8 +213,12 @@ while not done:
     ball_y += y_vel
     ball_r += delta_r
 
-#TODO: fix the speed - what the heck is going on with the velocity? also set speed
-#TODO: breaks on decrease speed
+    # i = 0
+    # if i % 1000 == 0:
+    #     print("X_vel: " + str(x_vel))
+    #     print("Y_vel: " + str(y_vel))
+    #     i += 1
+
 
 #TODO: add easter egg
 #TODO: recheck all commands
